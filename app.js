@@ -9,6 +9,7 @@ const STATE = {
   DISTRIBUTION: "distribution",
   PLAYING: "playing",
   END_TURN: "end_turn",
+  RESULT: "result",
 };
 
 const WORDS = [
@@ -20,9 +21,10 @@ const WORDS = [
 const app = {
   view: STATE.RULES,
   players: 6,          // 3..20
+  impostors: 1,        // 1..3, ma sempre <= players-1
   minutes: 3,          // 1..60
   currentPlayer: 1,
-  impostorIndex: 1,
+  impostorIndices: [],
   secretWord: "",
   revealed: false,
   timerId: null,
@@ -30,7 +32,6 @@ const app = {
 };
 
 function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
-
 function pad2(n){ return String(n).padStart(2, "0"); }
 
 function formatMMSS(totalSec){
@@ -43,10 +44,32 @@ function pickRandom(arr){
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function sampleUniqueIndices(count, maxInclusive){
+  // ritorna array di numeri unici nel range 1..maxInclusive
+  const set = new Set();
+  while (set.size < count) {
+    set.add(Math.floor(Math.random() * maxInclusive) + 1);
+  }
+  return Array.from(set).sort((a,b)=>a-b);
+}
+
+function isImpostorCountInvalid(){
+  // requisito: impostori deve essere ALMENO uno in meno dei giocatori
+  // quindi invalid se impostori >= giocatori (in particolare quando uguali)
+  return app.impostors >= app.players;
+}
+
+function normalizeImpostors(){
+  // massimo 3, minimo 1, e massimo players-1
+  const maxAllowed = Math.max(1, Math.min(3, app.players - 1));
+  app.impostors = clamp(app.impostors, 1, maxAllowed);
+}
+
 function resetRound(){
+  normalizeImpostors();
   app.currentPlayer = 1;
-  app.impostorIndex = Math.floor(Math.random() * app.players) + 1;
   app.secretWord = pickRandom(WORDS);
+  app.impostorIndices = sampleUniqueIndices(app.impostors, app.players);
   app.revealed = false;
   stopTimer();
 }
@@ -57,7 +80,6 @@ function startTimer(){
 
   app.timerId = setInterval(() => {
     app.remainingSec = Math.max(0, app.remainingSec - 1);
-    // Aggiorna solo la parte di timer, se presente
     const t = $("#timerValue");
     if (t) t.textContent = formatMMSS(app.remainingSec);
 
@@ -101,12 +123,12 @@ function render(){
     root.innerHTML = `
       <h2 class="h2">Regole</h2>
       <p class="p">
-        Ogni giocatore riceve una parola segreta, tranne uno: <strong>l’impostore</strong>.
-        L’impostore sa solo di essere impostore e deve bluffare. Gli altri devono scoprirlo.
+        Ogni giocatore riceve una parola segreta, tranne uno o più: <strong>gli impostori</strong>.
+        Gli impostori sanno solo di esserlo e devono bluffare. Gli altri devono scoprirli.
       </p>
       <p class="p">
         Dopo la distribuzione dei ruoli, parte un conto alla rovescia. Quando finisce (o quando lo decidi),
-        si vota per smascherare l’impostore e si avvia un nuovo turno.
+        si passa alla fase di voto e poi puoi vedere il risultato.
       </p>
       <div class="btnbar">
         <button class="btn primary" id="goSettings">Vai alle impostazioni</button>
@@ -122,6 +144,9 @@ function render(){
   }
 
   if (app.view === STATE.SETTINGS) {
+    normalizeImpostors();
+    const invalid = isImpostorCountInvalid();
+
     root.innerHTML = `
       <h2 class="h2">Impostazioni</h2>
 
@@ -139,6 +164,27 @@ function render(){
 
       <div class="row">
         <div class="label">
+          <strong>
+            Numero di impostori
+            ${invalid ? `<span class="alert-icon" title="Valore non valido" aria-label="Alert">⚠️</span>` : ``}
+          </strong>
+          <span>Da 1 a 3 (default 1) — deve essere almeno 1 in meno dei giocatori</span>
+        </div>
+        <div class="counter">
+          <button class="small-btn" id="impMinus" aria-label="Diminuisci impostori">−</button>
+          <div class="value" id="impValue">${app.impostors}</div>
+          <button class="small-btn" id="impPlus" aria-label="Aumenta impostori">+</button>
+        </div>
+      </div>
+
+      ${invalid ? `
+        <div class="alert-box">
+          ⚠️ Non valido: il numero di impostori deve essere <strong>al massimo ${Math.max(1, app.players - 1)}</strong>.
+        </div>
+      ` : ``}
+
+      <div class="row">
+        <div class="label">
           <strong>Tempo a disposizione</strong>
           <span>Da 01:00 a 60:00 (default 03:00)</span>
         </div>
@@ -152,19 +198,33 @@ function render(){
       <hr />
 
       <div class="btnbar">
-        <button class="btn primary" id="startDistribution">Avvia distribuzione ruoli</button>
+        <button class="btn primary" id="startDistribution" ${invalid ? "disabled" : ""}>Avvia distribuzione ruoli</button>
         <button class="btn soft" id="backRules">Torna alle regole</button>
       </div>
     `;
 
     $("#playersMinus").addEventListener("click", () => {
       app.players = clamp(app.players - 1, 3, 20);
+      normalizeImpostors();
       render();
     });
     $("#playersPlus").addEventListener("click", () => {
       app.players = clamp(app.players + 1, 3, 20);
+      normalizeImpostors();
       render();
     });
+
+    $("#impMinus").addEventListener("click", () => {
+      app.impostors = clamp(app.impostors - 1, 1, 3);
+      normalizeImpostors();
+      render();
+    });
+    $("#impPlus").addEventListener("click", () => {
+      app.impostors = clamp(app.impostors + 1, 1, 3);
+      normalizeImpostors();
+      render();
+    });
+
     $("#timeMinus").addEventListener("click", () => {
       app.minutes = clamp(app.minutes - 1, 1, 60);
       render();
@@ -174,11 +234,15 @@ function render(){
       render();
     });
 
-    $("#startDistribution").addEventListener("click", () => {
-      resetRound();
-      app.view = STATE.DISTRIBUTION;
-      render();
-    });
+    const startBtn = $("#startDistribution");
+    if (startBtn) {
+      startBtn.addEventListener("click", () => {
+        if (isImpostorCountInvalid()) return; // safety
+        resetRound();
+        app.view = STATE.DISTRIBUTION;
+        render();
+      });
+    }
 
     $("#backRules").addEventListener("click", () => {
       app.view = STATE.RULES;
@@ -189,6 +253,7 @@ function render(){
 
   if (app.view === STATE.DISTRIBUTION) {
     const isLastPlayer = app.currentPlayer === app.players;
+    const isImpostor = app.impostorIndices.includes(app.currentPlayer);
 
     root.innerHTML = `
       <h2 class="h2">Distribuzione ruoli</h2>
@@ -197,7 +262,7 @@ function render(){
         <div class="big">Visualizza ruolo del giocatore ${app.currentPlayer}</div>
         ${app.revealed ? `
           <div class="reveal" id="revealBox">
-            ${app.currentPlayer === app.impostorIndex ? "Sei l’impostore" : `Parola: ${app.secretWord}`}
+            ${isImpostor ? "Sei l’impostore" : `Parola: ${app.secretWord}`}
           </div>
         ` : `
           <p class="p" style="text-align:center;">
@@ -289,16 +354,54 @@ function render(){
       <div class="step">
         <div class="big">Smascherate l’impostore</div>
         <p class="p" style="text-align:center;">
-          Discutete e votate. Poi avviate un nuovo turno.
+          Discutete e votate. Quando siete pronti, potete visualizzare il risultato.
         </p>
       </div>
 
       <div class="btnbar">
-        <button class="btn primary" id="newRound">Avvia un nuovo turno</button>
+        <button class="btn primary" id="showResult">Visualizza risultato</button>
         <button class="btn soft" id="backSettings">Impostazioni</button>
       </div>
 
-      <div class="note">Il nuovo turno riassegna impostore e parola usando le impostazioni correnti.</div>
+      <div class="note">Il risultato mostrerà la parola e i numeri dei giocatori impostori.</div>
+    `;
+
+    $("#showResult").addEventListener("click", () => {
+      app.view = STATE.RESULT;
+      render();
+    });
+
+    $("#backSettings").addEventListener("click", () => {
+      resetRound();
+      app.view = STATE.SETTINGS;
+      render();
+    });
+    return;
+  }
+
+  if (app.view === STATE.RESULT) {
+    const list = app.impostorIndices.join(", ");
+    const label = app.impostorIndices.length === 1 ? "Impostore" : "Impostori";
+
+    root.innerHTML = `
+      <h2 class="h2">Risultato</h2>
+
+      <div class="step">
+        <div class="big">Parola</div>
+        <div class="reveal">${app.secretWord}</div>
+      </div>
+
+      <div class="step" style="margin-top: 10px;">
+        <div class="big">${label}</div>
+        <div class="reveal">${list}</div>
+      </div>
+
+      <div class="btnbar">
+        <button class="btn primary" id="newRound">Avvia nuovo turno</button>
+        <button class="btn soft" id="backSettings2">Impostazioni</button>
+      </div>
+
+      <div class="note">Il nuovo turno riassegna parola e impostori usando le impostazioni correnti.</div>
     `;
 
     $("#newRound").addEventListener("click", () => {
@@ -307,7 +410,7 @@ function render(){
       render();
     });
 
-    $("#backSettings").addEventListener("click", () => {
+    $("#backSettings2").addEventListener("click", () => {
       resetRound();
       app.view = STATE.SETTINGS;
       render();
@@ -320,13 +423,11 @@ function render(){
 // Init
 // -----------------------------
 (function init(){
-  // Tema da storage
   const savedTheme = localStorage.getItem("impostore_theme") || "light";
   applyTheme(savedTheme);
 
   $("#themeToggle").addEventListener("click", toggleTheme);
 
-  // Stato iniziale
   app.view = STATE.RULES;
   render();
 })();
