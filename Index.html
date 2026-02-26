@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gioco dell’Impostore</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <button id="themeToggle" class="icon-btn" aria-label="Attiva/disattiva modalità notturna" title="Tema">
+      <span id="themeIcon" aria-hidden="true">🌙</span>
+    </button>
+
+    <h1 class="title">Gioco dell’impostore</h1>
+
+    <div class="topbar-spacer" aria-hidden="true"></div>
+  </header>
+
+  <main class="stage">
+    <section class="card" role="region" aria-live="polite">
+      <div id="cardContent"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
