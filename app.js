@@ -1,6 +1,4 @@
-// -----------------------------
-// Stato + utility
-// -----------------------------
+// app.js
 const $ = (sel) => document.querySelector(sel);
 
 const STATE = {
@@ -12,20 +10,18 @@ const STATE = {
   RESULT: "result",
 };
 
-const WORDS = [
-  "Pizzeria", "Aeroporto", "Spiaggia", "Biblioteca", "Ospedale",
-  "Stazione", "Museo", "Palestra", "Castello", "Supermercato",
-  "Cinema", "Scuola", "Ristorante", "Teatro", "Parco"
-];
-
 const app = {
   view: STATE.RULES,
-  players: 6,          // 3..20
-  impostors: 1,        // 1..3, ma sempre <= players-1
-  minutes: 3,          // 1..60
+  players: 6,           // 3..20
+  impostors: 1,         // 1..3, ma sempre <= players-1
+  minutes: 3,           // 1..60
+  impostorHintEnabled: true, // DEFAULT abilitata ✅
+
   currentPlayer: 1,
   impostorIndices: [],
   secretWord: "",
+  secretHint: "",
+
   revealed: false,
   timerId: null,
   remainingSec: 0,
@@ -45,30 +41,37 @@ function pickRandom(arr){
 }
 
 function sampleUniqueIndices(count, maxInclusive){
-  // ritorna array di numeri unici nel range 1..maxInclusive
   const set = new Set();
-  while (set.size < count) {
-    set.add(Math.floor(Math.random() * maxInclusive) + 1);
-  }
+  while (set.size < count) set.add(Math.floor(Math.random() * maxInclusive) + 1);
   return Array.from(set).sort((a,b)=>a-b);
 }
 
 function isImpostorCountInvalid(){
-  // requisito: impostori deve essere ALMENO uno in meno dei giocatori
-  // quindi invalid se impostori >= giocatori (in particolare quando uguali)
   return app.impostors >= app.players;
 }
 
 function normalizeImpostors(){
-  // massimo 3, minimo 1, e massimo players-1
   const maxAllowed = Math.max(1, Math.min(3, app.players - 1));
   app.impostors = clamp(app.impostors, 1, maxAllowed);
+}
+
+function pickWordPair(){
+  // WORD_PAIRS arriva da words.js
+  const list = (typeof WORD_PAIRS !== "undefined" && Array.isArray(WORD_PAIRS) && WORD_PAIRS.length)
+    ? WORD_PAIRS
+    : [{ word: "Parola", hint: "Suggerimento" }];
+
+  return pickRandom(list);
 }
 
 function resetRound(){
   normalizeImpostors();
   app.currentPlayer = 1;
-  app.secretWord = pickRandom(WORDS);
+
+  const pair = pickWordPair();
+  app.secretWord = pair.word;
+  app.secretHint = pair.hint;
+
   app.impostorIndices = sampleUniqueIndices(app.impostors, app.players);
   app.revealed = false;
   stopTimer();
@@ -106,7 +109,6 @@ function applyTheme(theme){
   $("#themeIcon").textContent = theme === "dark" ? "☀️" : "🌙";
   localStorage.setItem("impostore_theme", theme);
 }
-
 function toggleTheme(){
   const current = document.documentElement.getAttribute("data-theme") || "light";
   applyTheme(current === "dark" ? "light" : "dark");
@@ -185,6 +187,18 @@ function render(){
 
       <div class="row">
         <div class="label">
+          <strong>Suggerimento per l’impostore</strong>
+          <span>Mostra una parola “simile” solo all’impostore</span>
+        </div>
+
+        <label class="switch" title="Abilita/disabilita suggerimento">
+          <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""} />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="row">
+        <div class="label">
           <strong>Tempo a disposizione</strong>
           <span>Da 01:00 a 60:00 (default 03:00)</span>
         </div>
@@ -225,6 +239,12 @@ function render(){
       render();
     });
 
+    $("#hintToggle").addEventListener("change", (e) => {
+      app.impostorHintEnabled = !!e.target.checked;
+      // niente render necessario, ma ok se vuoi consistenza visiva
+      // render();
+    });
+
     $("#timeMinus").addEventListener("click", () => {
       app.minutes = clamp(app.minutes - 1, 1, 60);
       render();
@@ -237,7 +257,7 @@ function render(){
     const startBtn = $("#startDistribution");
     if (startBtn) {
       startBtn.addEventListener("click", () => {
-        if (isImpostorCountInvalid()) return; // safety
+        if (isImpostorCountInvalid()) return;
         resetRound();
         app.view = STATE.DISTRIBUTION;
         render();
@@ -255,6 +275,10 @@ function render(){
     const isLastPlayer = app.currentPlayer === app.players;
     const isImpostor = app.impostorIndices.includes(app.currentPlayer);
 
+    const impostorText = app.impostorHintEnabled
+      ? `Sei l’impostore<br><span style="font-weight:700;font-size:14px;opacity:.9;">Suggerimento: ${app.secretHint}</span>`
+      : `Sei l’impostore`;
+
     root.innerHTML = `
       <h2 class="h2">Distribuzione ruoli</h2>
 
@@ -262,7 +286,7 @@ function render(){
         <div class="big">Visualizza ruolo del giocatore ${app.currentPlayer}</div>
         ${app.revealed ? `
           <div class="reveal" id="revealBox">
-            ${isImpostor ? "Sei l’impostore" : `Parola: ${app.secretWord}`}
+            ${isImpostor ? impostorText : `Parola: ${app.secretWord}`}
           </div>
         ` : `
           <p class="p" style="text-align:center;">
