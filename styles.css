@@ -287,3 +287,25 @@ button.btn{
 .switch input:checked + .slider:before {
   transform: translateX(22px);
 }
+
+/* Immagini ruolo (leggere, stile "cartoon") */
+.role-illustration {
+  width: min(320px, 100%);
+  aspect-ratio: 1 / 1;
+  margin: 10px auto 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--btnSoft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-illustration img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;      /* riempie bene senza deformare */
+  object-position: center top; /* testa/busto più in vista */
+  display: block;
+}
