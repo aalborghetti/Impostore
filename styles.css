@@ -385,9 +385,9 @@ button.btn{
 
 /* Placeholder prima della rivelazione ruolo (punto di domanda) */
 .question-illustration{
-  width: min(220px, 100%);
+  width: min(320px, 100%);
   aspect-ratio: 1 / 1;
-  margin: 12px auto 6px;
+  margin: 10px auto 6px;
   border-radius: 18px;
 
   /* stesso look polaroid leggero */
