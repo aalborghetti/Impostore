@@ -30,6 +30,32 @@ const app = {
   remainingSec: 0,
 };
 
+// --- Background music (default OFF) ---
+const bgm = new Audio("./assets/spy-theme.mp3");
+bgm.loop = true;
+bgm.volume = 0.18; // basso
+
+let bgmEnabled = false; // DEFAULT: gioco parte senza audio
+
+async function setBgmEnabled(on) {
+  bgmEnabled = on;
+  const icon = document.querySelector("#musicIcon");
+  if (icon) icon.textContent = bgmEnabled ? "🔈" : "🔇";
+
+  if (!bgmEnabled) {
+    try { bgm.pause(); } catch {}
+    return;
+  }
+
+  // play() deve avvenire dentro un gesto utente → qui siamo nel click handler
+  try {
+    await bgm.play();
+  } catch {
+    // se il browser blocca per qualche motivo, resterà OFF visivamente? no:
+    // lasciamo ON e riproverà al prossimo click (oppure puoi revertire a OFF)
+  }
+}
+
 // ---------- utils ----------
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -345,6 +371,16 @@ function render() {
 
 // ---------- init ----------
 (async function init() {
+  const musicBtn = document.querySelector("#musicToggle");
+    if (musicBtn) {
+      musicBtn.addEventListener("click", async () => {
+        await setBgmEnabled(!bgmEnabled);
+      });
+    }
+
+// imposta icona iniziale coerente
+const musicIcon = document.querySelector("#musicIcon");
+if (musicIcon) musicIcon.textContent = bgmEnabled ? "🔈" : "🔇";
   applyTheme(localStorage.getItem("impostore_theme") || "light");
   $("#themeToggle").addEventListener("click", toggleTheme);
 
