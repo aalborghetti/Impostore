@@ -336,8 +336,9 @@ function render() {
     const isLastPlayer = app.currentPlayer === app.players;
     const isImpostor = app.impostorIndices.includes(app.currentPlayer);
 
-    const roleImgSrc = isImpostor ? "./assets/impostore.png" : "./assets/giocatore.png";
-    const roleImgAlt = isImpostor ? "Impostore" : "Giocatore";
+    const roleWebp = isImpostor ? "./assets/impostore.webp" : "./assets/giocatore.webp";
+    const rolePng  = isImpostor ? "./assets/impostore.png"  : "./assets/giocatore.png"; // opzionale fallback
+    const roleAlt  = isImpostor ? "Impostore" : "Giocatore";
 
     const impostorText = app.impostorHintEnabled && app.secretHint
       ? `Sei l’impostore<br><span style="font-weight:700;font-size:14px;opacity:.9;">Suggerimento: ${app.secretHint}</span>`
