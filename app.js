@@ -411,38 +411,48 @@ function render() {
     return;
   }
 
-  if (app.view === STATE.PLAYING) {
-    root.innerHTML = `
-      <h2 class="h2">Partita in corso</h2>
+if (app.view === STATE.PLAYING) {
+  const hourglassWebp = "./assets/clessidra.webp";
+  const hourglassPng = "./assets/clessidra.png"; // opzionale fallback
 
-      <div class="step">
-        <div class="big">Tempo rimanente</div>
-        <div class="reveal" style="font-size:22px;" id="timerValue">${formatMMSS(app.remainingSec)}</div>
-      </div>
+  root.innerHTML = `
+    <h2 class="h2">Partita in corso</h2>
 
-      <div class="btnbar">
-        <button class="btn primary" id="endTurn">Termina turno</button>
-        <button class="btn soft" id="goHome">Home</button>
-      </div>
+    <div class="timer-illustration">
+      <picture>
+        <source srcset="${hourglassWebp}" type="image/webp">
+        <img src="${hourglassPng}" alt="Clessidra" loading="eager" decoding="async">
+      </picture>
+    </div>
 
-      <div class="note">Consiglio: fate un giro di descrizioni brevi della parola, poi votate.</div>
-    `;
+    <div class="step">
+      <div class="big">Tempo rimanente</div>
+      <div class="reveal" style="font-size:22px;" id="timerValue">${formatMMSS(app.remainingSec)}</div>
+    </div>
 
-    $("#endTurn").addEventListener("click", () => {
-      stopTimer();
-      app.view = STATE.END_TURN;
-      render();
-    });
+    <div class="btnbar">
+      <button class="btn primary" id="endTurn">Termina turno</button>
+      <button class="btn soft" id="goHome">Home</button>
+    </div>
 
-    $("#goHome").addEventListener("click", () => {
-      stopTimer();
-      resetRound();
-      app.view = STATE.RULES;
-      render();
-    });
+    <div class="note">Consiglio: fate un giro di descrizioni brevi della parola, poi votate.</div>
+  `;
 
-    return;
-  }
+  $("#endTurn").addEventListener("click", () => {
+    stopTimer();
+    app.view = STATE.END_TURN;
+    render();
+  });
+
+  $("#goHome").addEventListener("click", () => {
+    stopTimer();
+    resetRound();
+    app.view = STATE.RULES;
+    render();
+  });
+
+  return;
+}
 
   if (app.view === STATE.END_TURN) {
     root.innerHTML = `
