@@ -153,7 +153,10 @@ hr{
   padding: 14px;
   border-radius: 14px;
   border: 1px dashed var(--border);
-  background: var(--btnSoft);
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--border);
+  background: rgba(255,255,255,.55);
   color: var(--btnSoftText);
   font-weight: 800;
   font-size: 18px;
@@ -334,15 +337,6 @@ button.btn{
   font-weight: 800;
   letter-spacing: .2px;
   color: var(--muted);
-}
-
-/* reveal box più "pulito" sotto la polaroid */
-.reveal{
-  margin-top: 12px;
-  border-style: solid;
-  border-width: 1px;
-  border-color: var(--border);
-  background: rgba(255,255,255,.55);
 }
 
 [data-theme="dark"] .reveal{
