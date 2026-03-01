@@ -221,7 +221,7 @@ function render() {
           <button class="small-btn" id="playersMinus">−</button>
           <div class="value">${app.players}</div>
           <button class="small-btn" id="playersPlus">+</button>
-            <button class="info-btn" id="infoPlayers" aria-label="Info numero giocatori">i</button>
+            <button class="info-btn" id="infoPlayers" aria-label="Info numero giocatori">ⓘ</button>
         </div>
       </div>
 
@@ -233,7 +233,7 @@ function render() {
           <button class="small-btn" id="impMinus">−</button>
           <div class="value">${app.impostors}</div>
           <button class="small-btn" id="impPlus">+</button>
-          <button class="info-btn" id="infoImpostors" aria-label="Info numero giocatori">i</button>
+          <button class="info-btn" id="infoImpostors" aria-label="Info numero giocatori">ⓘ</button>
         </div>
       </div>
 
@@ -245,7 +245,7 @@ function render() {
           <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""}>
           <span class="slider"></span>
         </div>
-        <button class="info-btn" id="infoHint" aria-label="Info numero giocatori">i</button>
+        <button class="info-btn" id="infoHint" aria-label="Info numero giocatori">ⓘ</button>
       </div>
 
       <div class="row">
@@ -254,7 +254,7 @@ function render() {
           <button class="small-btn" id="timeMinus">−</button>
           <div class="value">${formatMMSS(app.minutes * 60)}</div>
           <button class="small-btn" id="timePlus">+</button>
-          <button class="info-btn" id="infoTime" aria-label="Info numero giocatori">i</button>
+          <button class="info-btn" id="infoTime" aria-label="Info numero giocatori">ⓘ</button>
         </div>
       </div>
 
