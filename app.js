@@ -241,7 +241,7 @@ function render() {
 
 <div class="row setting-row">
   <div class="label">
-    <strong>Suggerimento per l’impostore</strong>
+    <strong>Suggerimento</strong>
   </div>
 
   <div class="setting-controls">
